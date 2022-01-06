@@ -1,6 +1,8 @@
 val scala3Version = "3.1.0"
 val AkkaVersion = "2.6.18"
 
+lazy val twitter = (project in file("twitter"))
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -22,3 +24,4 @@ lazy val root = project
     Test / javaOptions += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf",
     Test / fork := true // to apply config above
   )
+  .dependsOn(twitter)

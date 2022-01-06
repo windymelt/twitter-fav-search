@@ -14,9 +14,14 @@ trait LoadContentFromContentRepositoryApplicationComponent:
     def pastContentAsSource(
         ctx: ContentRepositoryCtx
     ): Source[(Seq[Content], ContentRepositoryCtx), NotUsed] =
-      Source.unfoldAsync(ctx) { currentCtx =>
+      val src = Source.unfoldAsync(ctx) { currentCtx =>
         contentRepository.retrievePastContent(
           currentCtx,
           contentRepository.preferredChunkSize
         ) map (_.map(chunk => (chunk.ctx, (chunk.contents, chunk.ctx))))
       }
+      contentRepository.throttling match
+        case Some(thr) => src.throttle(thr.requestCount, thr.duration)
+        case None      => src
+
+// TODO: 重複しはじめたら処理済みとみなして中断するようなFlowを作る
