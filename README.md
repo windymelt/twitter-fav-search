@@ -1,8 +1,14 @@
-## sbt project compiled with Scala 3
+## twitter-fav-search
+
+Load & Search your favorite tweets
 
 ### Usage
 
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
+WIP
 
-For more information on the sbt-dotty plugin, see the
-[scala3-example-project](https://github.com/scala/scala3-example-project/blob/main/README.md).
+### Architecture
+
+- Clean architecture.
+  - Plugin architecture. Default content repository is Twitter. Default search repository is ElasticSearch.
+- DI with Cake pattern.
+- Data processing with Akka Streams.
