@@ -80,3 +80,64 @@ class InmemoryContentRepositoryComponentSpec
       third <- contentRepository.retrievePastContent(second.get.ctx, 5)
     yield third shouldBe None
   }
+
+  "InmemoryContentRepository.retrieveLatestContent" should "return first chunk" in {
+    inmemorySystem.originalContents =
+      collection.mutable.Seq(1 until 100*) map TestHelper.genDummyContent
+    val firstResult =
+      contentRepository.retrieveLatestContent(
+        cursor = InmemoryContentRepositoryCtx(100),
+        chunkSize = 2
+      )
+    firstResult map {
+      _.get.contents shouldBe inmemorySystem.originalContents
+        .slice(98, 100)
+        .toSeq
+    }
+  }
+
+  it should "return second..5th chunks" in {
+    inmemorySystem.originalContents =
+      collection.mutable.Seq(1 until 100*) map TestHelper.genDummyContent
+
+    val initialCtx = InmemoryContentRepositoryCtx(100)
+    for
+      fr <- contentRepository.retrieveLatestContent(initialCtx, 2)
+      _ <- fr.get.contents shouldBe inmemorySystem.originalContents
+        .slice(98, 100)
+        .toSeq
+      sr <- contentRepository.retrieveLatestContent(fr.get.ctx, 2)
+      _ <- sr.get.contents shouldBe inmemorySystem.originalContents
+        .slice(96, 98)
+        .toSeq
+      tr <- contentRepository.retrieveLatestContent(sr.get.ctx, 2)
+      _ <- tr.get.contents shouldBe inmemorySystem.originalContents
+        .slice(94, 96)
+        .toSeq
+      fr <- contentRepository.retrieveLatestContent(tr.get.ctx, 2)
+      _ <- fr.get.contents shouldBe inmemorySystem.originalContents
+        .slice(92, 94)
+        .toSeq
+      fifr <- contentRepository.retrieveLatestContent(fr.get.ctx, 2)
+    yield fifr.get.contents shouldBe inmemorySystem.originalContents
+      .slice(90, 92)
+      .toSeq
+  }
+
+  it should "ends up with None when end of sequence" in {
+    inmemorySystem.originalContents =
+      collection.mutable.Seq(1 to 10*) map TestHelper.genDummyContent
+
+    val initialCtx = InmemoryContentRepositoryCtx(10)
+    for
+      first <- contentRepository.retrieveLatestContent(initialCtx, 5)
+      _ <- first.get.contents shouldBe inmemorySystem.originalContents
+        .slice(5, 10)
+        .toSeq
+      second <- contentRepository.retrieveLatestContent(first.get.ctx, 5)
+      _ <- second.get.contents shouldBe inmemorySystem.originalContents
+        .slice(0, 5)
+        .toSeq
+      third <- contentRepository.retrieveLatestContent(second.get.ctx, 5)
+    yield third shouldBe None
+  }

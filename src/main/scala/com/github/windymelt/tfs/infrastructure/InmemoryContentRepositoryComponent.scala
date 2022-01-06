@@ -21,29 +21,30 @@ trait InmemoryContentRepositoryComponent extends ContentRepositoryComponent:
 
     def retrieveLatestContent(
         cursor: ContentRepositoryCtx,
-        chunkSize: Int = 5
-    ): Future[Option[ContentRepositoryChunkedData]] = ???
+        chunkSize: Int = preferredChunkSize
+    ): Future[Option[ContentRepositoryChunkedData]] = cursor match
+      case InmemoryContentRepositoryCtx(cur) =>
+        val contents =
+          inmemorySystem.originalContents.slice(cur - chunkSize, cur).toSeq
+        val ctx = InmemoryContentRepositoryCtx(cur - chunkSize)
+        contents.isEmpty match // TODO: same as `retrievePastContent`
+          case true => Future.successful(None)
+          case false =>
+            Future.successful(Some(ContentRepositoryChunkedData(contents, ctx)))
 
     def retrievePastContent(
         cursor: ContentRepositoryCtx =
           InmemoryContentRepository.initialContextForRetrievePastContent,
         chunkSize: Int = preferredChunkSize
-    ): Future[Option[ContentRepositoryChunkedData]] =
-      cursor match
-        case InmemoryContentRepositoryCtx(cur) =>
-          val contents = inmemorySystem.originalContents
-            .slice(
-              cur,
-              cur + chunkSize
-            )
-            .toSeq
-          val ctx = InmemoryContentRepositoryCtx(cur + chunkSize)
-          contents.isEmpty match
-            case true => Future.successful(None)
-            case false =>
-              Future.successful(
-                Some(ContentRepositoryChunkedData(contents, ctx))
-              )
+    ): Future[Option[ContentRepositoryChunkedData]] = cursor match
+      case InmemoryContentRepositoryCtx(cur) =>
+        val contents =
+          inmemorySystem.originalContents.slice(cur, cur + chunkSize).toSeq
+        val ctx = InmemoryContentRepositoryCtx(cur + chunkSize)
+        contents.isEmpty match // TODO: emptyではなくchunkSize未満のときに終了させる
+          case true => Future.successful(None)
+          case false =>
+            Future.successful(Some(ContentRepositoryChunkedData(contents, ctx)))
 
     def preferredChunkSize = 5
 
