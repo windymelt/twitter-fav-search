@@ -85,3 +85,22 @@ class TwitterClient(
       val cloned = result.asScala.toList
       (cloned, rateLimitObject)
     }
+
+  def block(userId: Long): Future[Unit] =
+    import twitter4j.User
+    val asyncTwitter = tf.getInstance
+    val resultPromise = Promise[Unit]()
+    val listener = new TwitterAdapter():
+      override def createdBlock(user: User): Unit =
+        resultPromise.success(())
+      override def onException(
+          e: TwitterException,
+          method: TwitterMethod
+      ): Unit =
+        resultPromise.failure(e)
+
+    asyncTwitter.addListener(listener)
+
+    asyncTwitter.createBlock(userId)
+
+    resultPromise.future
